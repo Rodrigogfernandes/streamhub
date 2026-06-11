@@ -1,12 +1,17 @@
-import { StreamHubProvider } from '@/components/StreamHubProvider';
+import { Metadata } from 'next';
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: 'StreamHub — Início',
+  description: 'Assista canais, filmes e séries',
+};
+
+export default function HomePage() {
   return (
-    <StreamHubProvider>
-      <main className="min-h-screen">
-        <h1 className="text-2xl font-bold">StreamHub Web</h1>
-        <p className="mt-4 text-gray-400">Em construção</p>
-      </main>
-    </StreamHubProvider>
+    <main className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-5xl font-extrabold mb-4">StreamHub</h1>
+        <p className="text-gray-400">Web app inicializado com sucesso</p>
+      </div>
+    </main>
   );
 }

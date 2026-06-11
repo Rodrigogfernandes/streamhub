@@ -4,17 +4,29 @@
     "slug": "streamhub-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0A0E1A"
+    "scheme": "streamhub",
+    " Platforms": ["ios", "android"],
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     },
-    "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.streamhub.app" },
-    "android": { "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0A0E1A" }, "package": "com.streamhub.app" },
-    "web": { "favicon": "./assets/favicon.png" },
-    "plugins": ["expo-router"]
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.streamhub.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0E1A"
+      },
+      "package": "com.streamhub.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

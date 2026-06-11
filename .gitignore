@@ -1,0 +1,165 @@
+# Dependencies
+
+node_modules/
+jspm_packages/
+
+# Build
+
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Logs
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Database
+
+*.sqlite
+*.sqlite3
+*.db
+
+# Cache
+
+.cache/
+.tmp/
+.temp/
+
+# TypeScript
+
+*.tsbuildinfo
+
+# IDE
+
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# NestJS
+
+.nestcli.json
+
+# Testing
+
+coverage/
+reports/
+
+# Redis
+
+dump.rdb
+
+# Docker
+
+docker-data/
+*.pid
+
+# Uploads
+
+uploads/
+storage/
+media/
+
+# Certificates & Keys
+
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+
+# Secrets
+
+secrets/
+config/secrets/
+
+# Runtime
+
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Package managers
+
+.pnpm-store/
+.yarn/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Vercel
+
+.vercel/
+
+# Render
+
+.render/
+
+# Turbo
+
+.turbo/
+
+# Next.js
+
+.next/
+
+# Expo
+
+.expo/
+
+# Android
+
+android/.gradle/
+android/app/build/
+
+# iOS
+
+ios/build/
+DerivedData/
+
+# StreamHub Generated Files
+
+streams/
+playlists/
+epg/
+recordings/
+transcodes/
+thumbnails/
+hls/
+tmp/
+
+# Local configs
+
+config/local.*
+config/*.local.*
+
+# Backup files
+
+*.bak
+*.backup
+*.old

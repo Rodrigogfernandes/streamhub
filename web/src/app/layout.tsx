@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
+import { Providers } from '@/components/Providers';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'StreamHub — Plataforma de Streaming',
-  description: 'Plataforma de streaming inteligente com classificação automática por IA',
+  title: 'StreamHub',
+  description: 'Plataforma de streaming inteligente',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className="dark">
-      <body className="bg-gray-950 text-white antialiased">
-        {children}
+    <html lang="pt-BR">
+      <body>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
