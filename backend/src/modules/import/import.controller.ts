@@ -1,8 +1,8 @@
-import { Controller, Post, Body, UseGuards, Param } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Param, Get } from '@nestjs/common';
 import { ImportService } from './import.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../auth/guards/roles.guard';
-import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('import')
 export class ImportController {
@@ -11,28 +11,27 @@ export class ImportController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post('m3u')
-  async importM3U(@Body() body: { url?: string; content?: string }) {
-    return this.importService.createJob('M3U_URL', body.url || 'uploaded_file');
+  importM3U(@Body() body: { url?: string; content?: string }) {
+    return this.importService.createJob('M3U_URL', body.url || 'upload');
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post('xtream')
-  async importXtream(@Body() body: { server: string; username: string; password: string }) {
+  importXtream(@Body() body: { server: string; username: string; password: string }) {
     return this.importService.createJob('XTREAM', `${body.server}:${body.username}`);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post('json')
-  async importJson(@Body() body: { data: any[] }) {
-    return this.importService.createJob('JSON', JSON.stringify(body.data).substring(0, 100));
+  importJson(@Body() body: { data: any[] }) {
+    return this.importService.createJob('JSON', JSON.stringify(body.data).slice(0, 100));
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @UseGuards(JwtAuthGuard)
   @Get('jobs/:id')
-  async getJobStatus(@Param('id') id: string) {
+  getJob(@Param('id') id: string) {
     return this.importService['repo'].findOne({ where: { id } });
   }
 }

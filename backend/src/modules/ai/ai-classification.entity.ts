@@ -1,42 +1,42 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { ImportJob } from './import-job.entity';
+import { ImportJob } from '../import/import-job.entity';
 
 @Entity('ai_classifications')
 export class AiClassification {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column()
-  channelId: string;
+  channelId!: string;
 
   @ManyToOne(() => ImportJob, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'importJobId' })
-  importJob: ImportJob;
+  importJob!: ImportJob;
 
   @Column()
-  importJobId: string;
+  importJobId!: string;
 
   @Column({ nullable: true })
-  detectedCategory: string;
+  detectedCategory?: string;
 
   @Column({ nullable: true })
-  detectedCountry: string;
+  detectedCountry?: string;
 
   @Column({ nullable: true })
-  detectedLanguage: string;
+  detectedLanguage?: string;
 
   @Column({ type: 'int', nullable: true })
-  detectedAgeRating: number;
+  detectedAgeRating?: number;
 
   @Column({ type: 'boolean', default: false })
-  isAdult: boolean;
+  isAdult!: boolean;
 
   @Column({ type: 'boolean', default: false })
-  isDuplicate: boolean;
+  isDuplicate!: boolean;
 
   @Column({ type: 'jsonb', nullable: true })
-  reasoning: Record<string, any>;
+  reasoning?: Record<string, any>;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

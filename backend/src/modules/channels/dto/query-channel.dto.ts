@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, Min, Max, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsInt } from 'class-validator';
 
 export class QueryChannelDto {
   @IsOptional()
@@ -11,12 +11,9 @@ export class QueryChannelDto {
 
   @IsOptional()
   @IsInt()
-  @Min(1)
   page?: number;
 
   @IsOptional()
   @IsInt()
-  @Min(1)
-  @Max(100)
   limit?: number;
 }
