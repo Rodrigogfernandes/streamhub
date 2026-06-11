@@ -1,0 +1,42 @@
+name: StreamHub CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: cd backend && npm ci
+      - name: Lint
+        run: cd backend && npm run lint
+      - name: Test
+        run: cd backend && npm run test
+      - name: Build
+        run: cd backend && npm run build
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install and Build
+        run: |
+          cd web
+          npm ci
+          npm run build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: web/dist/
