@@ -13,6 +13,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { EpgModule } from './modules/epg/epg.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 
 import config from './config/configuration';
 import { getDatabaseConfig } from './config/database.config';
@@ -20,7 +21,16 @@ import { getDatabaseConfig } from './config/database.config';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [config] }),
-    BullModule.forRootAsync({ useFactory: () => ({ redis: { host: 'localhost', port: 6379 } }) }),
+    BullModule.forRootAsync({
+      useFactory: () => ({
+        redis: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        },
+      }),
+    }),
+    BullModule.registerQueue({ name: 'import' }),
+    BullModule.registerQueue({ name: 'ai' }),
     TypeOrmModule.forRootAsync({ useFactory: getDatabaseConfig }),
     ScheduleModule.forRoot(),
 
@@ -30,6 +40,7 @@ import { getDatabaseConfig } from './config/database.config';
     AuthModule,
     UsersModule,
     EpgModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
