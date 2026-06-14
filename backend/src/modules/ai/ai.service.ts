@@ -1,25 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { AiClassification } from './ai-classification.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { AiClassification } from './ai-classification.schema';
 
 @Injectable()
 export class AiService {
-  constructor(
-    @InjectRepository(AiClassification)
-    private readonly aiRepo: Repository<AiClassification>,
-  ) {}
+  constructor(@InjectModel(AiClassification.name) private readonly model: Model<AiClassification>) {}
 
   async createClassification(data: Partial<AiClassification>) {
-    const record = this.aiRepo.create(data);
-    return this.aiRepo.save(record);
+    const doc = new this.model(data);
+    return doc.save();
   }
 
   async findByChannel(channelId: string) {
-    return this.aiRepo.find({
-      where: { channelId },
-      order: { createdAt: 'DESC' },
-      take: 1,
-    });
+    return this.model.find({ channelId }).sort({ createdAt: -1 }).limit(1).exec();
   }
 }

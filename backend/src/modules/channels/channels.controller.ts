@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Param, Query, UploadedFile } from '@nestjs/common';
 import { ChannelsService } from './channels.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
@@ -25,7 +25,7 @@ export class ChannelsController {
   @Roles('ADMIN')
   @Post()
   create(@Body() dto: CreateChannelDto, @Request() req: any) {
-    return this.channelsService.create(dto, req.user?.id);
+    return this.channelsService.create({ ...dto, createdById: req.user?.id });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

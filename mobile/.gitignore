@@ -1,0 +1,6 @@
+# @generated expo-cli
+# expo-env.d.ts removed - not needed for modern Expo
+
+# Expo specific
+
+.expo/

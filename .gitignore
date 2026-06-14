@@ -120,17 +120,19 @@ pids/
 
 .render/
 
-# Turbo
+# Monorepo
 
 .turbo/
 
 # Next.js
 
 .next/
+out/
 
 # Expo
 
 .expo/
+.expo-shared/
 
 # Android
 
@@ -141,6 +143,14 @@ android/app/build/
 
 ios/build/
 DerivedData/
+
+# iOS / Android signing
+
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
 
 # StreamHub Generated Files
 
@@ -157,6 +167,11 @@ tmp/
 
 config/local.*
 config/*.local.*
+
+# direnv / envrc
+
+.envrc
+.direnv/
 
 # Backup files
 

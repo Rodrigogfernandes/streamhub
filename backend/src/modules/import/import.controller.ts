@@ -32,6 +32,6 @@ export class ImportController {
   @UseGuards(JwtAuthGuard)
   @Get('jobs/:id')
   getJob(@Param('id') id: string) {
-    return this.importService['repo'].findOne({ where: { id } });
+    return this.importService.getJobById(id);
   }
 }

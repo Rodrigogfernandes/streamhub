@@ -1,0 +1,4 @@
+# Mobile corrigido fallback rules
+
+node_modules/
+.expo/

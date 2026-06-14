@@ -1,29 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ImportJob } from './import-job.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { ImportJob } from './import-job.schema';
 
 @Injectable()
 export class ImportService {
-  constructor(
-    @InjectRepository(ImportJob)
-    private readonly repo: Repository<ImportJob>,
-  ) {}
+  constructor(@InjectModel(ImportJob.name) private readonly model: Model<ImportJob>) {}
 
-  async createJob(sourceType: ImportJob['sourceType'], source: string) {
-    const job = this.repo.create({ sourceType, source, status: 'PENDING' });
-    return this.repo.save(job);
+  async createJob(sourceType: string, source: string) {
+    const doc = new this.model({ sourceType, source, status: 'PENDING' });
+    return doc.save();
   }
 
   async updateProgress(id: string, processed: number, total: number) {
-    await this.repo.update(id, { processedChannels: processed, totalChannels: total });
+    return this.model.findByIdAndUpdate(id, { processedChannels: processed, totalChannels: total }).exec();
   }
 
   async markCompleted(id: string) {
-    await this.repo.update(id, { status: 'COMPLETED' });
+    return this.model.findByIdAndUpdate(id, { status: 'COMPLETED' }).exec();
   }
 
   async markFailed(id: string, error: string) {
-    await this.repo.update(id, { status: 'FAILED', error });
+    return this.model.findByIdAndUpdate(id, { status: 'FAILED', error }).exec();
+  }
+
+  async getJobById(id: string) {
+    return this.model.findById(id).exec();
   }
 }

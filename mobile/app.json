@@ -4,12 +4,14 @@
     "slug": "streamhub-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "scheme": "streamhub",
-    " Platforms": ["ios", "android"],
-    "runtimeVersion": {
-      "policy": "sdkVersion"
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0E1A"
     },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.streamhub.app"
@@ -22,11 +24,10 @@
       "package": "com.streamhub.app"
     },
     "web": {
-      "bundler": "metro",
-      "output": "single"
+      "favicon": "./assets/favicon.png"
     },
-    "experiments": {
-      "typedRoutes": true
-    }
+    "plugins": ["expo-router"],
+    "sdkVersion": "54.0.0",
+    "main": "index.js"
   }
 }

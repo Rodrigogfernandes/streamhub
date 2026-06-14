@@ -1,62 +1,55 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Channel } from './channel.entity';
-import { CreateChannelDto } from './dto/create-channel.dto';
-import { UpdateChannelDto } from './dto/update-channel.dto';
-import { QueryChannelDto } from './dto/query-channel.dto';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Channel } from './channel.schema';
 
 @Injectable()
 export class ChannelsService {
-  constructor(
-    @InjectRepository(Channel)
-    private readonly channelRepo: Repository<Channel>,
-  ) {}
+  constructor(@InjectModel(Channel.name) private readonly model: Model<Channel>) {}
 
-  async create(dto: CreateChannelDto, createdById?: string) {
-    const channel = this.channelRepo.create({ ...dto, createdById } as any);
-    return this.channelRepo.save(channel);
+  async create(dto: any) {
+    const doc = new this.model(dto);
+    return doc.save();
   }
 
-  async findAll(query: QueryChannelDto) {
+  async findAll(query: any) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const qb = this.channelRepo.createQueryBuilder('channel')
-      .leftJoinAndSelect('channel.category', 'category')
-      .where('channel.isActive = :active', { active: true });
+    const filter: any = { isActive: true };
+    if (query.categoryId) filter.categoryId = query.categoryId;
+    if (query.search) filter.name = new RegExp(query.search, 'i');
 
-    if (query.categoryId) qb.andWhere('channel.categoryId = :cat', { cat: query.categoryId });
-    if (query.search) qb.andWhere('channel.name ILIKE :search', { search: `%${query.search}%` });
-
-    const [data, total] = await qb
-      .orderBy('channel.qualityScore', 'DESC')
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+    const [data, total] = await Promise.all([
+      this.model.find(filter).skip(skip).limit(limit).sort({ qualityScore: -1 }).exec(),
+      this.model.countDocuments(filter),
+    ]);
 
     return { data, total, page, limit };
   }
 
   async findOne(id: string) {
-    const channel = await this.channelRepo.findOne({ where: { id } });
-    if (!channel) throw new NotFoundException('Canal não encontrado');
-    return channel;
+    return this.model.findById(id).exec();
   }
 
-  async update(id: string, dto: UpdateChannelDto) {
-    await this.channelRepo.update(id, dto);
-    return this.findOne(id);
+  async update(id: string, dto: any) {
+    return this.model.findByIdAndUpdate(id, dto, { new: true }).exec();
   }
 
   async remove(id: string) {
-    const channel = await this.findOne(id);
-    channel.isActive = false;
-    return this.channelRepo.save(channel);
+    return this.model.findByIdAndUpdate(id, { isActive: false }, { new: true }).exec();
   }
 
-  async bulkUpsert(channels: Partial<Channel>[]) {
-    return this.channelRepo.upsert(channels, ['streamUrl']);
+  async bulkUpsert(channels: any[]) {
+    return this.model.bulkWrite(
+      channels.map((ch) => ({
+        updateOne: {
+          filter: { streamUrl: ch.streamUrl },
+          update: { $set: ch },
+          upsert: true,
+        },
+      })),
+    );
   }
 }

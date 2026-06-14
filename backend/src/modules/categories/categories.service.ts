@@ -1,25 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Category } from './category.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Category } from './category.schema';
 
 @Injectable()
 export class CategoriesService {
-  constructor(
-    @InjectRepository(Category)
-    private readonly repo: Repository<Category>,
-  ) {}
+  constructor(@InjectModel(Category.name) private readonly model: Model<Category>) {}
 
   async findAll() {
-    return this.repo.find({ order: { sortOrder: 'ASC', name: 'ASC' } });
+    return this.model.find().sort({ sortOrder: 1, name: 1 }).exec();
   }
 
   async findOne(id: string) {
-    return this.repo.findOne({ where: { id } });
+    return this.model.findById(id).exec();
   }
 
-  async create(dto: Partial<Category>) {
-    const cat = this.repo.create(dto);
-    return this.repo.save(cat);
+  async create(dto: { name: string; icon?: string; sortOrder?: number }) {
+    const doc = new this.model(dto);
+    return doc.save();
   }
 }

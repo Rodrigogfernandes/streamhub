@@ -1,21 +1,14 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { BullModule } from '@nestjs/bull';
-
-import { ChannelsModule } from '../channels/channels.module';
-import { ImportJob } from './import-job.entity';
-import { ImportProcessor } from './import.processor';
-import { ImportController } from './import.controller';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ImportJob, ImportJobSchema } from './import-job.schema';
 import { ImportService } from './import.service';
 
 @Module({
   imports: [
-    ChannelsModule,
-    TypeOrmModule.forFeature([ImportJob]),
-    BullModule.registerQueue({ name: 'import' }),
+    MongooseModule.forFeature([{ name: ImportJob.name, schema: ImportJobSchema }]),
   ],
-  controllers: [ImportController],
-  providers: [ImportService, ImportProcessor],
+  controllers: [],
+  providers: [ImportService],
   exports: [ImportService],
 })
 export class ImportModule {}

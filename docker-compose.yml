@@ -1,19 +1,15 @@
 services:
-  postgres:
-    image: postgres:16-alpine
+  mongodb:
+    image: mongo:7-alpine
     restart: always
-    environment:
-      POSTGRES_USER: streamhub
-      POSTGRES_PASSWORD: streamhub
-      POSTGRES_DB: streamhub
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mongodb_data:/data/db
     networks:
       - streamhub
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U streamhub"]
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,17 +38,16 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USERNAME=streamhub
-      - DB_PASSWORD=streamhub
-      - DB_DATABASE=streamhub
+      - MONGODB_URI=mongodb://mongodb:27017/streamhub
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_SECRET=${JWT_SECRET:-streamhub_prod_secret_change_me}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - CORS_ORIGIN=*
     depends_on:
-      postgres:
+      mongodb:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -87,7 +82,7 @@ services:
       - streamhub
 
 volumes:
-  pgdata:
+  mongodb_data:
   redisdata:
 
 networks:

@@ -1,13 +1,15 @@
 @echo off
-echo StreamHub - Setup Alternativo (sem Docker)
+echo StreamHub - Setup MongoDB + Cloudinary
 echo.
 echo Este script prepara o backend para rodar com:
-echo - PostgreSQL local (localhost:5432)
+echo - MongoDB local (localhost:27017)
 echo - Redis local (localhost:6379)
+echo - Cloudinary (upload de imagens)
 echo.
 echo IMPORTANTE: Instale antes:
-echo - PostgreSQL 16: https://www.postgresql.org/download/
+echo - MongoDB Community: https://www.mongodb.com/try/download/community
 echo - Redis: https://redis.io/docs/install/
+echo - Conta Cloudinary: https://cloudinary.com/console
 echo.
 pause
 
@@ -47,5 +49,10 @@ echo   cd backend ^& npm run start:dev
 echo.
 echo Para rodar o web:
 echo   cd web ^& npm install ^& npm run dev
+echo.
+echo Nao esqueca de configurar:
+echo   - MongoDB rodando em localhost:27017
+echo   - Redis rodando em localhost:6379
+echo   - Cloudinary credentials no .env
 echo.
 pause

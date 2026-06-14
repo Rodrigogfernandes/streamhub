@@ -2,23 +2,19 @@
 
 ## Arquitetura
 
-### Backend (NestJS + TypeScript)
+### Backend (NestJS + TypeScript + MongoDB + Cloudinary)
 ```
 backend/
 ├── src/
 │   ├── modules/
 │   │   ├── auth/          # JWT + Passport + RBAC
-│   │   ├── channels/      # CRUD canais, bulk upsert, busca
+│   │   ├── channels/      # CRUD canais com Mongoose
 │   │   ├── import/        # Importação M3U/JSON/API/XTREAM + BullMQ
 │   │   ├── ai/            # Classificação ML + integração OpenAI
 │   │   ├── users/         # Perfis, preferências, roles
-│   │   └── epg/           # Guia de programação eletrônica
-│   ├── common/
-│   │   ├── decorators/    # @Roles(), @CurrentUser()
-│   │   ├── filters/       # Exceções Globais
-│   │   ├── guards/        # JwtAuthGuard, RolesGuard
-│   │   └── interceptors/  # Logging, Transform
-│   └── config/            # Env + Database config
+│   │   ├── epg/           # Guia de programação eletrônica
+│   │   └── upload/        # Upload de imagens via Cloudinary
+│   ├── config/            # Env + Database config
 ```
 
 ### Frontend Web (Next.js + TypeScript + TailwindCSS)
@@ -28,9 +24,8 @@ backend/
 - Player de vídeo com HLS.js
 
 ### Mobile (React Native + Expo)
-- Stack: TypeScript + Redux Toolkit + React Query
-- Player nativo (react-native-video / hls-player)
-- Navegação por Stack + Bottom Tabs
+- Stack: TypeScript + Expo Router
+- Player nativo (expo-av)
 
 ### Smart TV (React Native TV)
 - Android TV + Fire TV SDK
@@ -43,8 +38,9 @@ backend/
 | Camada | Tecnologia |
 |--------|-----------|
 | Backend API | NestJS + TypeScript |
-| Banco | PostgreSQL 16 + TypeORM |
+| Banco | MongoDB 7 + Mongoose |
 | Cache/Fila | Redis + BullMQ |
+| Upload Imagens | Cloudinary |
 | Autenticação | JWT + Passport + RBAC |
 | Frontend | Next.js + TS + Tailwind |
 | Mobile | React Native + Expo |
@@ -52,27 +48,24 @@ backend/
 | Container | Docker + Docker Compose |
 | CI/CD | GitHub Actions |
 | CDN | Cloudflare + AWS S3 |
-| Streaming | HLS + nginx-rtmp + FFmpeg |
 
 ---
 
 ## Variáveis de Ambiente
 
-### Backend
-```
+### Backend (.env)
+```env
 PORT=3000
 NODE_ENV=development
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=streamhub
-DB_PASSWORD=streamhub
-DB_DATABASE=streamhub
+MONGODB_URI=mongodb://localhost:27017/streamhub
 REDIS_HOST=localhost
 REDIS_PORT=6379
 JWT_SECRET=<secret>
+CLOUDINARY_CLOUD_NAME=<cloud_name>
+CLOUDINARY_API_KEY=<api_key>
+CLOUDINARY_API_SECRET=<api_secret>
 OPENAI_API_KEY=<key>
 TMDB_API_KEY=<key>
-TVMAZE_API_URL=https://api.tvmaze.com
 ```
 
 ---
@@ -81,69 +74,107 @@ TVMAZE_API_URL=https://api.tvmaze.com
 
 ### Pré-requisitos
 - Node.js 20+
-- Docker + Docker Compose
-- PostgreSQL 16 (ou usar docker-compose)
-- Redis (ou usar docker-compose)
+- MongoDB 7+
+- Redis 7+
+- Conta Cloudinary (gratuita)
 
-### 1. Backend
+### 1. Clone e instale
 ```bash
+git clone <repo>
+cd streamhub-full
+
+# Setup automático (Windows)
+setup-local.bat
+
+# Ou manual:
 cd backend
-cp .env.example .env
 npm install
-npm run start:dev
+cp .env.example .env
 ```
 
-### 2. Web
+### 2. Inicie serviços
+```bash
+# MongoDB
+mongod
+
+# Redis
+redis-server
+```
+
+### 3. Backend
+```bash
+cd backend
+npm run start:dev
+# → http://localhost:3000/api
+```
+
+### 4. Web
 ```bash
 cd web
 npm install
 npm run dev
+# → http://localhost:3001
 ```
 
-### 3. Mobile
+### 5. Mobile
 ```bash
 cd mobile
 npm install
 npx expo start
 ```
 
-### 4. Docker (tudo junto)
+### 6. Docker (tudo junto)
 ```bash
 docker compose up -d
 ```
 
 ---
 
-## Pipeline IA (BullMQ)
-
-1. Importação → cria `ImportJob`
-2. BullMQ agenda workers:
-   - `import.processor.ts` — parse M3U/JSON/XTREAM
-   - `ai.processor.ts` — classifica canais
-   - `enrichment.processor.ts` — TMDB/TVMaze
-3. Status salvo em `channels` + `ai_classifications`
-
----
-
-## Endpoints principais (Backend)
+## Endpoints principais
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| POST | /auth/register | Registrar usuário |
-| POST | /auth/login | Login |
-| GET | /channels | Listar canais |
-| GET | /channels/:id | Detalhes |
-| POST | /import/m3u | Importar M3U |
-| POST | /import/xtream | Importar Xtream |
-| POST | /ai/classify-batch | Classificar lote via IA |
+| POST | /api/auth/register | Registrar usuário |
+| POST | /api/auth/login | Login |
+| GET | /api/channels | Listar canais |
+| GET | /api/channels/:id | Detalhes |
+| POST | /api/import/m3u | Importar M3U |
+| POST | /api/upload/image | Upload de logo (Cloudinary) |
+| POST | /api/ai/classify-batch | Classificar lote via IA |
+
+---
+
+## Upload de Imagens (Cloudinary)
+
+O módulo de upload permite:
+- Upload de logos de canais
+- Geração automática de thumbs (800x450)
+- Conversão para WebP (otimização)
+- Deletar imagens por public_id
+
+### Exemplo de uso
+```typescript
+POST /api/upload/image
+Content-Type: multipart/form-data
+
+file: <binary>
+
+// Resposta
+{
+  "url": "https://res.cloudinary.com/...",
+  "publicId": "streamhub/channels/...",
+  "width": 800,
+  "height": 450
+}
+```
 
 ---
 
 ## Observações
 
 - **Segurança**: Nunca commite `.env` ou segredos
-- **Escalabilidade**: Workers IA rodam independentes via BullMQ
-- **Performance**: Cache Redis em categorias e listas
+- **Escalabilidade**: Workers IA rodam independentes via BullMQ + Redis
+- **Performance**: Cache Redis + CDN Cloudinary para imagens
 - **Qualidade de streaming**: HLS/DASH suportados no player web e native
 
 Bom desenvolvimento!
