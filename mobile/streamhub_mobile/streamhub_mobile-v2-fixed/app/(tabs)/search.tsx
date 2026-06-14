@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, StatusBar,
+  View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, StatusBar, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useQuery } from '@tanstack/react-query';
 import { Colors } from '../../src/constants/colors';
 import { Layout } from '../../src/constants/layout';
-import { MOVIES, CHANNELS } from '../../src/constants/mockData';
+import { ContentService } from '../../src/services/contentService';
 import { AgeBadge } from '../../src/components/Badge';
 import { useFormatters } from '../../src/hooks/useFormatters';
 
@@ -18,24 +19,14 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const { formatRating, formatDuration } = useFormatters();
 
-  const results = useMemo(() => {
-    if (query.trim().length < 2) return [];
-    const q = query.toLowerCase();
-    const movies = MOVIES
-      .filter((m) => m.title.toLowerCase().includes(q) || m.genres.some(g => g.toLowerCase().includes(q)))
-      .map((m) => ({ ...m, kind: 'movie' as const }));
-    const channels = CHANNELS
-      .filter((c) => c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q))
-      .map((c) => ({ ...c, kind: 'channel' as const }));
-    return [...movies, ...channels];
-  }, [query]);
+  const { data: results = [], isLoading } = useQuery({
+    queryKey: ['search', query],
+    queryFn: () => ContentService.searchContent(query),
+    enabled: query.trim().length >= 2,
+  });
 
   const handlePress = (item: any) => {
-    if (item.kind === 'movie') {
-      router.push({ pathname: '/player', params: { url: item.streamUrl, title: item.title } });
-    } else {
-      router.push({ pathname: '/player', params: { url: item.streamUrl, title: item.name } });
-    }
+    router.push({ pathname: '/details', params: { id: item.id, type: item.kind } });
   };
 
   return (
@@ -80,6 +71,10 @@ export default function SearchScreen() {
             ))}
           </View>
         </View>
+      ) : isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+        </View>
       ) : (
         <FlatList
           data={results}
@@ -94,11 +89,25 @@ export default function SearchScreen() {
           }
           renderItem={({ item }) => {
             const isMovie = item.kind === 'movie';
-            const thumb = isMovie ? (item as any).poster : (item as any).logo;
-            const title = isMovie ? (item as any).title : (item as any).name;
-            const sub = isMovie
-              ? `${(item as any).year} · ${formatDuration((item as any).duration)} · ⭐ ${formatRating((item as any).rating)}`
-              : `${(item as any).category} · ${(item as any).isLive ? 'Ao vivo' : ''}`;
+            const isSerie = item.kind === 'serie';
+            const isChannel = item.kind === 'channel';
+
+            const thumb = isChannel ? (item as any).logo : (item as any).poster;
+            const title = isChannel ? (item as any).name : (item as any).title;
+
+            let sub = '';
+            if (isMovie) {
+              sub = `${(item as any).year} · ${formatDuration((item as any).duration)} · ⭐ ${formatRating((item as any).rating)}`;
+            } else if (isSerie) {
+              sub = `${(item as any).seasons} ${(item as any).seasons > 1 ? 'temporadas' : 'temporada'} · ⭐ ${formatRating((item as any).rating)}`;
+            } else {
+              sub = `${(item as any).category} · ${(item as any).isLive ? 'Ao vivo' : ''}`;
+            }
+
+            const kindLabel = isMovie ? 'FILME' : isSerie ? 'SÉRIE' : 'CANAL';
+            const kindColor = isChannel ? Colors.live : Colors.accentBright;
+            const kindBg = isChannel ? Colors.liveDim : Colors.accentDim;
+
             return (
               <TouchableOpacity style={styles.result} onPress={() => handlePress(item)} activeOpacity={0.75}>
                 <Image source={{ uri: thumb }} style={styles.thumb} contentFit="cover" />
@@ -106,9 +115,9 @@ export default function SearchScreen() {
                   <Text style={styles.resultTitle} numberOfLines={1}>{title}</Text>
                   <Text style={styles.resultSub} numberOfLines={1}>{sub}</Text>
                   <View style={styles.resultMeta}>
-                    <View style={[styles.kindBadge, { backgroundColor: isMovie ? Colors.accentDim : Colors.liveDim }]}>
-                      <Text style={[styles.kindText, { color: isMovie ? Colors.accentBright : Colors.live }]}>
-                        {isMovie ? 'FILME' : 'CANAL'}
+                    <View style={[styles.kindBadge, { backgroundColor: kindBg }]}>
+                      <Text style={[styles.kindText, { color: kindColor }]}>
+                        {kindLabel}
                       </Text>
                     </View>
                     <AgeBadge ageRating={(item as any).ageRating} size="sm" />
@@ -195,4 +204,5 @@ const styles = StyleSheet.create({
   kindText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   empty: { alignItems: 'center', paddingTop: 80, gap: 12 },
   emptyText: { color: Colors.textSecondary, fontSize: 14 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
 });

@@ -8,6 +8,8 @@ export interface HistoryItem {
   streamUrl: string;
   watchedAt: number;
   durationMinutes?: number;
+  progressPosition?: number; // em segundos
+  progressDuration?: number; // em segundos
 }
 
 const KEY = StorageService.KEYS.HISTORY;
@@ -20,9 +22,13 @@ async function getAll(): Promise<HistoryItem[]> {
 async function add(item: Omit<HistoryItem, 'watchedAt'>): Promise<void> {
   let list = await getAll();
   // Remove entrada anterior do mesmo item (evita duplicatas)
+  const existing = list.find((h) => h.id === item.id);
   list = list.filter((h) => h.id !== item.id);
+  // Mantém progresso existente se houver e não for fornecido no novo item
+  const progressPosition = item.progressPosition ?? existing?.progressPosition;
+  const progressDuration = item.progressDuration ?? existing?.progressDuration;
   // Insere no topo e limita tamanho
-  list = [{ ...item, watchedAt: Date.now() }, ...list].slice(0, MAX_ITEMS);
+  list = [{ ...item, progressPosition, progressDuration, watchedAt: Date.now() }, ...list].slice(0, MAX_ITEMS);
   await StorageService.set(KEY, list);
 }
 
@@ -39,6 +45,20 @@ async function count(): Promise<number> {
   return (await getAll()).length;
 }
 
+async function updateProgress(id: string, progressPosition: number, progressDuration: number): Promise<void> {
+  const list = await getAll();
+  const index = list.findIndex((h) => h.id === id);
+  if (index !== -1) {
+    list[index] = {
+      ...list[index],
+      progressPosition,
+      progressDuration,
+      watchedAt: Date.now(),
+    };
+    await StorageService.set(KEY, list);
+  }
+}
+
 // Calcula total estimado de horas assistidas (1 canal = 30min por entrada)
 async function estimatedHours(): Promise<number> {
   const list = await getAll();
@@ -46,4 +66,4 @@ async function estimatedHours(): Promise<number> {
   return Math.round(minutes / 60);
 }
 
-export const HistoryService = { getAll, add, remove, clear, count, estimatedHours };
+export const HistoryService = { getAll, add, remove, clear, count, updateProgress, estimatedHours };

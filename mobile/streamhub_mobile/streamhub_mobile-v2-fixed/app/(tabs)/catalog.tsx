@@ -1,13 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, FlatList, StyleSheet, TouchableOpacity, StatusBar,
+  View, Text, FlatList, StyleSheet, TouchableOpacity, StatusBar, ActivityIndicator, RefreshControl
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { Colors } from '../../src/constants/colors';
 import { Layout } from '../../src/constants/layout';
-import { MOVIES } from '../../src/constants/mockData';
+import { ContentService } from '../../src/services/contentService';
 import { MovieCard } from '../../src/components/MovieCard';
 import { Movie } from '../../src/types';
+import { CatalogSkeleton } from '../../src/components/Skeleton';
 
 const GENRE_FILTERS = ['Todos', 'Ação', 'Drama', 'Comédia', 'Ficção Científica', 'Terror', 'Documentário'];
 const SORT_OPTIONS = ['Relevância', 'Nota', 'Ano', 'Duração'];
@@ -17,24 +19,23 @@ export default function CatalogScreen() {
   const [selectedGenre, setSelectedGenre] = useState('Todos');
   const [sortBy, setSortBy] = useState('Relevância');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { ScrollView } = require('react-native');
   const { Ionicons } = require('@expo/vector-icons');
 
-  const filtered = useMemo(() => {
-    let result = [...MOVIES];
-    if (selectedGenre !== 'Todos') {
-      result = result.filter((m) => m.genres.includes(selectedGenre));
-    }
-    switch (sortBy) {
-      case 'Nota': result.sort((a, b) => b.rating - a.rating); break;
-      case 'Ano': result.sort((a, b) => b.year - a.year); break;
-      case 'Duração': result.sort((a, b) => b.duration - a.duration); break;
-    }
-    return result;
-  }, [selectedGenre, sortBy]);
+  const { data: filtered = [], isLoading, refetch } = useQuery({
+    queryKey: ['movies-catalog', selectedGenre, sortBy],
+    queryFn: () => ContentService.getMovies(selectedGenre, sortBy),
+  });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
 
   const handleMoviePress = (movie: Movie) => {
-    router.push({ pathname: '/player', params: { url: movie.streamUrl, title: movie.title } });
+    router.push({ pathname: '/details', params: { id: movie.id, type: 'movie' } });
   };
 
   return (
@@ -89,23 +90,35 @@ export default function CatalogScreen() {
 
       <Text style={styles.resultCount}>{filtered.length} títulos</Text>
 
-      <FlatList
-        data={filtered}
-        keyExtractor={(m) => m.id}
-        numColumns={3}
-        contentContainerStyle={styles.grid}
-        columnWrapperStyle={styles.row}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="film-outline" size={48} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>Nenhum título encontrado</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <MovieCard movie={item} onPress={handleMoviePress} />
-        )}
-      />
+      {isLoading && !refreshing ? (
+        <CatalogSkeleton />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(m) => m.id}
+          numColumns={3}
+          contentContainerStyle={styles.grid}
+          columnWrapperStyle={styles.row}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={Colors.accent}
+              colors={[Colors.accent]}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="film-outline" size={48} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>Nenhum título encontrado</Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <MovieCard movie={item} onPress={handleMoviePress} />
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -183,4 +196,5 @@ const styles = StyleSheet.create({
   row: { gap: 10, marginBottom: 10 },
   empty: { alignItems: 'center', paddingTop: 80, gap: 12 },
   emptyText: { color: Colors.textSecondary, fontSize: 15 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
 });

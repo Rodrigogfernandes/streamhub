@@ -1,14 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import {
-  View, Text, FlatList, StyleSheet, TextInput, StatusBar, TouchableOpacity,
+  View, Text, FlatList, StyleSheet, TextInput, StatusBar, TouchableOpacity, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { Colors } from '../../src/constants/colors';
 import { Layout } from '../../src/constants/layout';
-import { CHANNELS } from '../../src/constants/mockData';
+import { ContentService } from '../../src/services/contentService';
 import { ChannelCard } from '../../src/components/ChannelCard';
 import { Channel } from '../../src/types';
+import { ChannelsSkeleton } from '../../src/components/Skeleton';
 
 const CHANNEL_CATEGORIES = ['Todos', 'TV Aberta', 'Esportes', 'Notícias', 'Documentários', 'Música', 'Infantil'];
 
@@ -16,18 +18,32 @@ export default function ChannelsScreen() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Query para buscar canais da API com cache do react-query
+  const { data: channels = [], isLoading, refetch } = useQuery({
+    queryKey: ['channels-catalog', selectedCategory],
+    queryFn: () => ContentService.getChannels(selectedCategory),
+  });
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
 
   const filtered = useMemo(() => {
-    return CHANNELS.filter((c) => {
+    return channels.filter((c) => {
       const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
-      const matchCat = selectedCategory === 'Todos' || c.category === selectedCategory;
-      return matchSearch && matchCat;
+      return matchSearch;
     });
-  }, [search, selectedCategory]);
+  }, [search, channels]);
 
   const handlePress = (channel: Channel) => {
-    router.push({ pathname: '/player', params: { url: channel.streamUrl, title: channel.name } });
+    router.push({ pathname: '/details', params: { id: channel.id, type: 'channel' } });
   };
+
+  const liveCount = channels.filter(c => c.isLive).length;
 
   return (
     <View style={styles.container}>
@@ -38,7 +54,7 @@ export default function ChannelsScreen() {
         <Text style={styles.headerTitle}>Canais</Text>
         <View style={styles.liveIndicator}>
           <View style={styles.liveDot} />
-          <Text style={styles.liveCount}>{CHANNELS.filter(c => c.isLive).length} ao vivo</Text>
+          <Text style={styles.liveCount}>{liveCount} ao vivo</Text>
         </View>
       </View>
 
@@ -69,24 +85,36 @@ export default function ChannelsScreen() {
         />
       </View>
 
-      {/* Grid */}
-      <FlatList
-        data={filtered}
-        keyExtractor={(c) => c.id}
-        numColumns={2}
-        contentContainerStyle={styles.grid}
-        columnWrapperStyle={styles.row}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="tv-outline" size={48} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>Nenhum canal encontrado</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <ChannelCard channel={item} onPress={handlePress} />
-        )}
-      />
+      {/* Grid / List */}
+      {isLoading && !refreshing ? (
+        <ChannelsSkeleton />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(c) => c.id}
+          numColumns={2}
+          contentContainerStyle={styles.grid}
+          columnWrapperStyle={styles.row}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={Colors.accent}
+              colors={[Colors.accent]}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="tv-outline" size={48} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>Nenhum canal encontrado</Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <ChannelCard channel={item} onPress={handlePress} />
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -189,4 +217,5 @@ const styles = StyleSheet.create({
   row: { gap: 10, marginBottom: 10 },
   empty: { alignItems: 'center', paddingTop: 80, gap: 12 },
   emptyText: { color: Colors.textSecondary, fontSize: 15 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
 });

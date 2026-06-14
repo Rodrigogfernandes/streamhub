@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { useFavorites } from '../../src/hooks/useFavorites';
 import { useWatchHistory } from '../../src/hooks/useWatchHistory';
 import { useFormatters } from '../../src/hooks/useFormatters';
+import { useAuth } from '../../src/contexts/auth';
 
 const MENU_ITEMS = [
   { icon: 'heart-outline',             label: 'Favoritos',          badge: 'favorites' },
@@ -26,6 +27,7 @@ export default function ProfileScreen() {
   const { count: favCount, favorites, loading: favLoading } = useFavorites();
   const { count: histCount, hours, history, loading: histLoading } = useWatchHistory();
   const { formatViewers } = useFormatters();
+  const { user, logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
   const scrollOffset = useRef(0);
 
@@ -46,10 +48,13 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    setTimeout(() => {
+    try {
+      await logout();
+    } catch (error) {
+      console.log('Logout error:', error);
+    } finally {
       setLoggingOut(false);
-      router.replace('/(auth)/login');
-    }, 1000);
+    }
   };
 
   const getBadge = (key: string | null) => {
@@ -77,11 +82,11 @@ export default function ProfileScreen() {
           <View style={styles.avatarBg}>
             <Ionicons name="person" size={40} color={Colors.accent} />
           </View>
-          <Text style={styles.userName}>Usuário StreamHub</Text>
-          <Text style={styles.userPlan}>Plano Premium</Text>
+          <Text style={styles.userName}>{user?.name || 'Usuário StreamHub'}</Text>
+          <Text style={styles.userPlan}>Plano {user?.plan || 'PREMIUM'}</Text>
           <View style={styles.planBadge}>
             <Ionicons name="star" size={11} color="#FBBF24" />
-            <Text style={styles.planText}>PREMIUM</Text>
+            <Text style={styles.planText}>{user?.plan || 'PREMIUM'}</Text>
           </View>
         </View>
 
@@ -115,7 +120,12 @@ export default function ProfileScreen() {
             <Text style={styles.recentTitle}>Continuar assistindo</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentList}>
               {history.slice(0, 6).map((item) => (
-                <View key={item.id} style={styles.recentItem}>
+                <TouchableOpacity 
+                  key={item.id} 
+                  style={styles.recentItem}
+                  onPress={() => router.push({ pathname: '/details', params: { id: item.id, type: item.type } })}
+                  activeOpacity={0.75}
+                >
                   <Image
                     source={{ uri: item.thumb }}
                     style={styles.recentThumb}
@@ -123,7 +133,7 @@ export default function ProfileScreen() {
                     transition={300}
                   />
                   <Text style={styles.recentItemTitle} numberOfLines={2}>{item.title}</Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
